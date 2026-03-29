@@ -1,27 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPrivyClient } from "@/lib/privy-server";
-import fs from "fs";
-import path from "path";
 
-// Persist wallet mappings to a JSON file so they survive hot reloads
-const WALLETS_FILE = path.join(process.cwd(), ".wallets.json");
-
-function loadWallets(): Record<string, { id: string; publicKey: string }> {
-  try {
-    if (fs.existsSync(WALLETS_FILE)) {
-      return JSON.parse(fs.readFileSync(WALLETS_FILE, "utf-8"));
-    }
-  } catch {
-    // Corrupted file, start fresh
-  }
-  return {};
+interface WalletMapping {
+  id: string;
+  publicKey: string;
 }
 
-function saveWallet(userId: string, wallet: { id: string; publicKey: string }) {
-  const wallets = loadWallets();
-  wallets[userId] = wallet;
-  fs.writeFileSync(WALLETS_FILE, JSON.stringify(wallets, null, 2));
-}
+// In-memory cache — survives within a single serverless instance lifetime.
+// On cold starts, wallets are re-fetched/created via Privy.
+const walletCache = new Map<string, WalletMapping>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,10 +36,8 @@ export async function POST(request: NextRequest) {
     }
 
     const privy = getPrivyClient();
-    const wallets = loadWallets();
 
-    // Check if we already have a wallet for this user
-    let walletInfo = wallets[userId];
+    let walletInfo = walletCache.get(userId);
 
     if (!walletInfo) {
       // Create a new Starknet wallet for this user via Privy
@@ -64,7 +49,7 @@ export async function POST(request: NextRequest) {
         id: wallet.id,
         publicKey: wallet.public_key,
       };
-      saveWallet(userId, walletInfo);
+      walletCache.set(userId, walletInfo);
     }
 
     // Return wallet info + the URL of our signing endpoint
