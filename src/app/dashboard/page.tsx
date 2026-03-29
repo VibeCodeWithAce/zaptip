@@ -21,6 +21,7 @@ import {
   Lock,
   Zap,
   Share2,
+  Code2,
 } from "lucide-react";
 
 const TIP_BASE_URL = "https://zaptip.vercel.app/tip/";
@@ -55,11 +56,15 @@ export default function DashboardPage() {
 
   const [copiedAddr, setCopiedAddr] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState<WithdrawToken | null>(null);
   const [withdrawAddr, setWithdrawAddr] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
 
   const tipUrl = address ? `${TIP_BASE_URL}${address}` : "";
+  const embedCode = address
+    ? `<script src="https://zaptip.vercel.app/widget.js" data-creator="${address}"></script>`
+    : "";
 
   const copyText = (text: string, setter: (v: boolean) => void) => {
     navigator.clipboard.writeText(text);
@@ -285,6 +290,29 @@ export default function DashboardPage() {
                   className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {copiedUrl ? (
+                    <Check className="h-3.5 w-3.5 text-green-500" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Embed Code */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Embed Code
+              </label>
+              <div className="flex items-start gap-2 rounded-lg border border-border bg-background px-3 py-2">
+                <Code2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <code className="text-xs font-mono text-muted-foreground break-all flex-1">
+                  {embedCode}
+                </code>
+                <button
+                  onClick={() => copyText(embedCode, setCopiedEmbed)}
+                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5"
+                >
+                  {copiedEmbed ? (
                     <Check className="h-3.5 w-3.5 text-green-500" />
                   ) : (
                     <Copy className="h-3.5 w-3.5" />

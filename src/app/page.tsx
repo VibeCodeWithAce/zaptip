@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Zap,
@@ -12,6 +13,8 @@ import {
   ArrowLeftRight,
   Shield,
   KeyRound,
+  Copy,
+  Check,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import LandingDemo from "@/components/LandingDemo";
@@ -60,7 +63,17 @@ const MODULES = [
   },
 ];
 
+const EMBED_SNIPPET = `<script\n  src="https://zaptip.vercel.app/widget.js"\n  data-creator="YOUR_WALLET_ADDRESS"\n></script>`;
+
 export default function Home() {
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
+
+  const copyEmbed = () => {
+    navigator.clipboard.writeText(EMBED_SNIPPET);
+    setCopiedEmbed(true);
+    setTimeout(() => setCopiedEmbed(false), 1500);
+  };
+
   return (
     <>
       <Navbar />
@@ -163,14 +176,30 @@ export default function Home() {
             </p>
           </div>
           <div className="mx-auto max-w-2xl rounded-xl border border-border bg-card p-1">
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
-              <Code2 className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">HTML</span>
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Code2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">HTML</span>
+              </div>
+              <button
+                onClick={copyEmbed}
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {copiedEmbed ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-green-500" />
+                    <span className="text-green-500">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy
+                  </>
+                )}
+              </button>
             </div>
             <pre className="overflow-x-auto p-4 text-sm font-mono text-muted-foreground">
-              <code>
-                {`<script\n  src="https://zaptip.vercel.app/widget.js"\n  data-creator="YOUR_WALLET_ADDRESS"\n></script>`}
-              </code>
+              <code>{EMBED_SNIPPET}</code>
             </pre>
           </div>
         </section>
