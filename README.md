@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ZapTip
+
+Embeddable crypto tipping widget built with Starkzap SDK for the Starkzap Developer Challenge.
+
+## What is ZapTip?
+
+ZapTip lets anyone accept crypto tips on any website with a single line of code. Creators sign up with Google, Twitter, or email — a Starknet wallet is created automatically — and get a unique tip page they can share or embed. Supporters send tips in STRK, ETH, or USDC directly from their browser.
+
+<!-- ![ZapTip Screenshot](screenshot.png) -->
+
+## Features
+
+- **Social Login** — Sign in with Google, Twitter, or email via Privy. No crypto wallet required.
+- **Multi-Token Tips** — Accept tips in STRK, ETH, and USDC on Starknet Sepolia.
+- **Creator Dashboard** — View balances, copy your tip link, share on Twitter, withdraw funds.
+- **Embeddable Widget** — Add a floating "Tip me" button to any website with one `<script>` tag.
+- **Withdraw Flow** — Transfer tokens to any external Starknet address from the dashboard.
+- **Embed Mode** — Clean iframe-friendly tip page for widget integration.
+
+## Starkzap Modules Used
+
+| Module | Usage |
+|--------|-------|
+| **Privy Integration** | Social login + server-managed Starknet wallets via `OnboardStrategy.Privy` |
+| **Wallets** | OpenZeppelin account abstraction with `wallet.ensureReady()` auto-deploy |
+| **ERC-20 Transfers** | Multi-token transfers via `wallet.transfer()` with `sepoliaTokens` |
+| **Tx Builder** | Composable transaction execution for tips and withdrawals |
+
+## Tech Stack
+
+- [Next.js](https://nextjs.org/) — React framework
+- [TypeScript](https://www.typescriptlang.org/) — Type safety
+- [Tailwind CSS](https://tailwindcss.com/) — Styling
+- [shadcn/ui](https://ui.shadcn.com/) — UI components (base-nova style)
+- [Starkzap SDK](https://www.starkzap.com/) — Starknet wallet management and transactions
+- [Privy](https://privy.io/) — Social authentication and wallet creation
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- A [Privy](https://dashboard.privy.io/) account with app ID and secret
+
+### Setup
+
+```bash
+git clone https://github.com/YOUR_USERNAME/zaptip.git
+cd zaptip/zaptip-app
+npm install
+```
+
+Copy the environment file and fill in your keys:
+
+```bash
+cp .env.example .env.local
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_PRIVY_APP_ID` | Yes | Privy app ID from dashboard.privy.io |
+| `PRIVY_APP_SECRET` | Yes | Privy app secret for server-side wallet creation |
+| `NEXT_PUBLIC_STARKNET_NETWORK` | Yes | Network name (`sepolia`) |
+| `NEXT_PUBLIC_APP_URL` | No | Override app URL (auto-detected in dev) |
+
+### Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/
+    page.tsx              — Landing page with live demo
+    dashboard/page.tsx    — Creator dashboard (balances, tip link, withdraw)
+    tip/[creatorId]/      — Tip page (supports ?embed=true for iframes)
+    api/
+      signer-context/     — Creates/retrieves Privy Starknet wallets
+      wallet/sign/        — Signing endpoint for Starkzap SDK
+  components/
+    Navbar.tsx            — Shared navigation bar
+    TipWidget.tsx         — Core tipping UI (token select, amount, send)
+    LandingDemo.tsx       — Landing page embedded demo
+  hooks/
+    useStarkzap.ts        — SDK init, wallet connection, deploy, balances
+    useTip.ts             — Token transfer logic for tipping
+    useWithdraw.ts        — Token transfer logic for withdrawals
+public/
+  widget.js               — Embeddable script (floating button + iframe)
+```
 
-## Learn More
+**Flow:** Privy handles social login and creates a server-managed Starknet wallet. The Starkzap SDK onboards the wallet using the OpenZeppelin account preset. Users fund their wallet from the Sepolia faucet, deploy it, then send ERC-20 transfers to creator addresses.
 
-To learn more about Next.js, take a look at the following resources:
+## Embed Widget
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Add this to any website to show a floating "Tip me" button:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```html
+<script
+  src="https://zaptip.vercel.app/widget.js"
+  data-creator="YOUR_WALLET_ADDRESS"
+></script>
+```
 
-## Deploy on Vercel
+## Future Improvements
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **AVNU Paymaster** — Gasless transactions via SNIP-9 outside execution
+- **Tongo Confidential Transfers** — Private tipping with on-chain privacy
+- **Database Backend** — Creator profiles, tip history, analytics
+- **Vanity URLs** — Custom tip page URLs (e.g., zaptip.vercel.app/tip/@alice)
+- **Mainnet Deployment** — Production network with real tokens
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+MIT
+
+---
+
+Built for the **Starkzap Developer Challenge**.

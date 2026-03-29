@@ -1,29 +1,17 @@
 "use client";
 
-import { use, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useStarkzap } from "@/hooks/useStarkzap";
 import TipWidget from "@/components/TipWidget";
 import { Button } from "@/components/ui/button";
-import Navbar from "@/components/Navbar";
-import { Zap, Wallet, Loader2, Copy, Check } from "lucide-react";
+import { Zap, Wallet, Loader2 } from "lucide-react";
 
-function truncAddr(addr: string) {
-  if (addr.length <= 14) return addr;
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+interface LandingDemoProps {
+  creatorAddress: string;
 }
 
-export default function TipPage({
-  params,
-}: {
-  params: Promise<{ creatorId: string }>;
-}) {
-  const { creatorId } = use(params);
-  const searchParams = useSearchParams();
-  const isEmbed = searchParams.get("embed") === "true";
+export default function LandingDemo({ creatorAddress }: LandingDemoProps) {
   const { login, authenticated } = usePrivy();
-  const [copied, setCopied] = useState(false);
   const {
     wallet,
     isConnecting,
@@ -35,58 +23,32 @@ export default function TipPage({
     refreshBalances,
   } = useStarkzap();
 
-  const content = (
-    <div className="w-full max-w-sm space-y-6">
-      {/* Tipper wallet info */}
-      {wallet && !isEmbed && (
-        <div className="flex items-center justify-between rounded-lg border border-border bg-card/50 px-3 py-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <Wallet className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-xs font-mono text-muted-foreground truncate">
-              {truncAddr(wallet.address.toString())}
-            </span>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(wallet.address.toString());
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1500);
-              }}
-              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {copied ? (
-                <Check className="h-3 w-3 text-green-500" />
-              ) : (
-                <Copy className="h-3 w-3" />
-              )}
-            </button>
-          </div>
-          {balances.STRK && (
-            <span className="text-xs text-muted-foreground ml-2 shrink-0">
-              {balances.STRK.toFormatted(true)} STRK
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Auth flow */}
-      {!authenticated ? (
+  if (!authenticated) {
+    return (
+      <div className="w-full max-w-sm">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-lg text-center space-y-4">
           <div className="flex h-14 w-14 mx-auto items-center justify-center rounded-full bg-primary/10">
             <Zap className="h-7 w-7 text-primary" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-card-foreground">
-              Sign in to tip
+              Send a live tip
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Connect with Google, Twitter, or email to send a tip
+              Sign in with Google, Twitter, or email to try it
             </p>
           </div>
           <Button size="lg" className="w-full h-11" onClick={login}>
-            Sign In
+            Sign In to Try
           </Button>
         </div>
-      ) : !wallet ? (
+      </div>
+    );
+  }
+
+  if (!wallet) {
+    return (
+      <div className="w-full max-w-sm">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-lg text-center space-y-4">
           <div className="flex h-14 w-14 mx-auto items-center justify-center rounded-full bg-primary/10">
             <Wallet className="h-7 w-7 text-primary" />
@@ -96,7 +58,7 @@ export default function TipPage({
               Connect Wallet
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Set up your Starknet wallet to send tips
+              Set up your Starknet wallet to send a tip
             </p>
           </div>
           <Button
@@ -115,7 +77,13 @@ export default function TipPage({
             )}
           </Button>
         </div>
-      ) : !isDeployed ? (
+      </div>
+    );
+  }
+
+  if (!isDeployed) {
+    return (
+      <div className="w-full max-w-sm">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-lg text-center space-y-4">
           <div className="flex h-14 w-14 mx-auto items-center justify-center rounded-full bg-yellow-500/10">
             <Wallet className="h-7 w-7 text-yellow-500" />
@@ -125,8 +93,7 @@ export default function TipPage({
               Deploy Wallet
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Your wallet needs to be deployed before you can send tips.
-              Fund it with STRK from the{" "}
+              Fund your wallet from the{" "}
               <a
                 href="https://starknet-faucet.vercel.app/"
                 target="_blank"
@@ -164,39 +131,16 @@ export default function TipPage({
             </Button>
           </div>
         </div>
-      ) : (
-        <TipWidget
-          creatorAddress={creatorId}
-          wallet={wallet}
-          balances={balances}
-          onRefreshBalances={() => refreshBalances()}
-        />
-      )}
-
-      {/* Footer */}
-      {!isEmbed && (
-        <p className="text-center text-xs text-muted-foreground">
-          Powered by ZapTip on Starknet Sepolia
-        </p>
-      )}
-    </div>
-  );
-
-  // Embed mode: minimal, no navbar
-  if (isEmbed) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-        {content}
-      </main>
+      </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
-      <main className="flex flex-1 flex-col items-center justify-center bg-background p-4">
-        {content}
-      </main>
-    </>
+    <TipWidget
+      creatorAddress={creatorAddress}
+      wallet={wallet}
+      balances={balances}
+      onRefreshBalances={() => refreshBalances()}
+    />
   );
 }
