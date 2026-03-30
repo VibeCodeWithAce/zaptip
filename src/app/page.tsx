@@ -49,6 +49,11 @@ const MODULES = [
     desc: "OpenZeppelin account abstraction with auto-deploy",
   },
   {
+    icon: Sparkles,
+    label: "AVNU Paymaster",
+    desc: "Gasless wallet deploys and withdrawals",
+  },
+  {
     icon: ArrowLeftRight,
     label: "ERC-20 Transfers",
     desc: "Multi-token transfers via Starkzap SDK",
@@ -57,11 +62,6 @@ const MODULES = [
     icon: Shield,
     label: "Tx Builder",
     desc: "Composable transaction execution on Starknet",
-  },
-  {
-    icon: Sparkles,
-    label: "AVNU Paymaster",
-    desc: "Gasless wallet deploys and withdrawals",
   },
 ];
 
@@ -206,7 +206,7 @@ export default function Home() {
               {MODULES.map((mod) => (
                 <div
                   key={mod.label}
-                  className="flex items-start gap-4 rounded-xl border border-border bg-card p-5"
+                  className="flex items-start gap-4 rounded-xl border border-border bg-card p-5 last:sm:col-span-2 last:sm:max-w-[calc(50%-0.5rem)] last:sm:mx-auto"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <mod.icon className="h-5 w-5 text-primary" />
