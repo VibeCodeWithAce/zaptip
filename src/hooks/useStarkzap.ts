@@ -19,7 +19,7 @@ function getSDK(): StarkZap {
     sdkInstance = new StarkZap({
       network: "mainnet",
       paymaster: {
-        nodeUrl: "https://paymaster.avnu.fi",
+        nodeUrl: "https://starknet.paymaster.avnu.fi",
         headers: { "x-paymaster-api-key": avnuApiKey ?? "" },
       },
     });
