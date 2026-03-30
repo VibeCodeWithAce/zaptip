@@ -15,12 +15,9 @@ import {
   KeyRound,
   Copy,
   Check,
+  Sparkles,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import LandingDemo from "@/components/LandingDemo";
-
-const DEMO_ADDRESS =
-  "0x02a3a76c111e3b5ff22468ed482101240db995f2a2e8248da74e056828ff0e67";
 
 const STEPS = [
   {
@@ -30,8 +27,8 @@ const STEPS = [
   },
   {
     icon: Share2,
-    title: "Share your link or embed the widget",
-    desc: "Copy your unique tip URL or add a one-line script to any website.",
+    title: "Embed or share your link",
+    desc: "Add a one-line script to any website, or copy your unique tip URL to share anywhere.",
   },
   {
     icon: Coins,
@@ -60,6 +57,11 @@ const MODULES = [
     icon: Shield,
     label: "Tx Builder",
     desc: "Composable transaction execution on Starknet",
+  },
+  {
+    icon: Sparkles,
+    label: "AVNU Paymaster",
+    desc: "Gasless wallet deploys and withdrawals",
   },
 ];
 
@@ -98,7 +100,7 @@ export default function Home() {
               <br className="hidden sm:block" />
               Let anyone tip you in STRK, ETH, or USDC on Starknet.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="mt-10 flex flex-col items-center gap-4">
               <Link
                 href="/dashboard"
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -107,27 +109,12 @@ export default function Home() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href={`/tip/${DEMO_ADDRESS}`}
+                href="/blog/demo"
                 className="inline-flex items-center gap-2 rounded-lg border border-border px-8 py-3.5 text-base font-semibold text-foreground hover:bg-muted transition-colors"
               >
                 Try the Demo
               </Link>
             </div>
-          </div>
-        </section>
-
-        {/* Live Demo */}
-        <section className="mx-auto w-full max-w-4xl px-4 pb-20">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-foreground">
-              Try it now
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              This is a live tip widget on Starknet. Sign in and send a real tip.
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <LandingDemo creatorAddress={DEMO_ADDRESS} />
           </div>
         </section>
 

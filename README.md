@@ -2,6 +2,9 @@
 
 Embeddable crypto tipping widget built with Starkzap SDK for the Starkzap Developer Challenge.
 
+**Live:** https://zaptip.vercel.app
+**Demo:** https://zaptip.vercel.app/blog/demo
+
 ## What is ZapTip?
 
 ZapTip lets anyone accept crypto tips on any website with a single line of code. Creators sign up with Google, Twitter, or email — a Starknet wallet is created automatically — and get a unique tip page they can share or embed. Supporters send tips in STRK, ETH, or USDC directly from their browser.
@@ -11,7 +14,7 @@ ZapTip lets anyone accept crypto tips on any website with a single line of code.
 ## Features
 
 - **Social Login** — Sign in with Google, Twitter, or email via Privy. No crypto wallet required.
-- **Multi-Token Tips** — Accept tips in STRK, ETH, and USDC on Starknet Sepolia.
+- **Multi-Token Tips** — Accept tips in STRK, ETH, and USDC on Starknet.
 - **Creator Dashboard** — View balances, copy your tip link, share on Twitter, withdraw funds.
 - **Embeddable Widget** — Add a floating "Tip me" button to any website with one `<script>` tag.
 - **Withdraw Flow** — Transfer tokens to any external Starknet address from the dashboard.
@@ -23,8 +26,9 @@ ZapTip lets anyone accept crypto tips on any website with a single line of code.
 |--------|-------|
 | **Privy Integration** | Social login + server-managed Starknet wallets via `OnboardStrategy.Privy` |
 | **Wallets** | OpenZeppelin account abstraction with `wallet.ensureReady()` auto-deploy |
-| **ERC-20 Transfers** | Multi-token transfers via `wallet.transfer()` with `sepoliaTokens` |
+| **ERC-20 Transfers** | Multi-token transfers via `wallet.transfer()` with `mainnetTokens` |
 | **Tx Builder** | Composable transaction execution for tips and withdrawals |
+| **AVNU Paymaster** | Gasless wallet deploys and withdrawals via AVNU |
 
 ## Tech Stack
 
@@ -62,7 +66,7 @@ cp .env.example .env.local
 |----------|----------|-------------|
 | `NEXT_PUBLIC_PRIVY_APP_ID` | Yes | Privy app ID from dashboard.privy.io |
 | `PRIVY_APP_SECRET` | Yes | Privy app secret for server-side wallet creation |
-| `NEXT_PUBLIC_STARKNET_NETWORK` | Yes | Network name (`sepolia`) |
+| `NEXT_PUBLIC_STARKNET_NETWORK` | Yes | Network name (`mainnet`) |
 | `NEXT_PUBLIC_APP_URL` | No | Override app URL (auto-detected in dev) |
 
 ### Run
@@ -96,7 +100,7 @@ public/
   widget.js               — Embeddable script (floating button + iframe)
 ```
 
-**Flow:** Privy handles social login and creates a server-managed Starknet wallet. The Starkzap SDK onboards the wallet using the OpenZeppelin account preset. Users fund their wallet from the Sepolia faucet, deploy it, then send ERC-20 transfers to creator addresses.
+**Flow:** Privy handles social login and creates a server-managed Starknet wallet. The Starkzap SDK onboards the wallet using the OpenZeppelin account preset. Users fund their wallet, deploy it, then send ERC-20 transfers to creator addresses.
 
 ## Embed Widget
 
@@ -111,11 +115,9 @@ Add this to any website to show a floating "Tip me" button:
 
 ## Future Improvements
 
-- **AVNU Paymaster** — Gasless transactions via SNIP-9 outside execution
 - **Tongo Confidential Transfers** — Private tipping with on-chain privacy
 - **Database Backend** — Creator profiles, tip history, analytics
 - **Vanity URLs** — Custom tip page URLs (e.g., zaptip.vercel.app/tip/@alice)
-- **Mainnet Deployment** — Production network with real tokens
 
 ## License
 
