@@ -3,6 +3,7 @@
 Embeddable crypto tipping widget built with Starkzap SDK for the Starkzap Developer Challenge.
 
 **Live:** https://zaptip.vercel.app
+
 **Demo:** https://zaptip.vercel.app/blog/demo
 
 ## What is ZapTip?
