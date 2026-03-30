@@ -242,6 +242,12 @@ export default function TipWidget({
               </>
             )}
           </Button>
+
+          {/* Watermark */}
+          <p className="text-center text-xs text-muted-foreground/60" style={{ fontSize: 12 }}>
+            <Zap className="inline h-3 w-3 -mt-px mr-0.5" />
+            Powered by ZapTip
+          </p>
         </div>
       </div>
     </div>
