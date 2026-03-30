@@ -5,7 +5,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import {
   StarkZap,
   OnboardStrategy,
-  sepoliaTokens,
+  mainnetTokens,
   type Amount,
 } from "starkzap";
 import type { WalletInterface } from "starkzap";
@@ -17,9 +17,9 @@ function getSDK(): StarkZap {
     const avnuApiKey = process.env.NEXT_PUBLIC_AVNU_API_KEY;
     console.log("AVNU KEY:", avnuApiKey);
     sdkInstance = new StarkZap({
-      network: "sepolia",
+      network: "mainnet",
       paymaster: {
-        nodeUrl: "https://sepolia.paymaster.avnu.fi",
+        nodeUrl: "https://paymaster.avnu.fi",
         headers: { "x-paymaster-api-key": avnuApiKey ?? "" },
       },
     });
@@ -147,9 +147,9 @@ export function useStarkzap() {
 
     try {
       const [strk, eth, usdc] = await Promise.all([
-        wallet.balanceOf(sepoliaTokens.STRK),
-        wallet.balanceOf(sepoliaTokens.ETH),
-        wallet.balanceOf(sepoliaTokens.USDC),
+        wallet.balanceOf(mainnetTokens.STRK),
+        wallet.balanceOf(mainnetTokens.ETH),
+        wallet.balanceOf(mainnetTokens.USDC),
       ]);
       setState((s) => ({
         ...s,

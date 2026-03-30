@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 const TIP_BASE_URL = "https://zaptip.vercel.app/tip/";
-const EXPLORER_BASE = "https://sepolia.voyager.online/tx/";
+const EXPLORER_BASE = "https://voyager.online/tx/";
 
 function truncAddr(addr: string) {
   if (addr.length <= 14) return addr;
@@ -409,7 +409,7 @@ export default function DashboardPage() {
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground pb-4">
-            Powered by ZapTip on Starknet Sepolia
+            Powered by ZapTip on Starknet
           </p>
         </div>
       </main>

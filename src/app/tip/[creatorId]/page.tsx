@@ -126,16 +126,7 @@ export default function TipPage({
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Your wallet needs to be deployed before you can send tips.
-              Fund it with STRK from the{" "}
-              <a
-                href="https://starknet-faucet.vercel.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Sepolia faucet
-              </a>
-              , then deploy.
+              Fund it with STRK, then deploy.
             </p>
           </div>
           <div className="flex gap-2">
@@ -176,7 +167,7 @@ export default function TipPage({
       {/* Footer */}
       {!isEmbed && (
         <p className="text-center text-xs text-muted-foreground">
-          Powered by ZapTip on Starknet Sepolia
+          Powered by ZapTip on Starknet
         </p>
       )}
     </div>

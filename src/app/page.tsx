@@ -123,7 +123,7 @@ export default function Home() {
               Try it now
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              This is a live tip widget on Starknet Sepolia. Sign in and send a real tip.
+              This is a live tip widget on Starknet. Sign in and send a real tip.
             </p>
           </div>
           <div className="flex justify-center">
@@ -248,7 +248,7 @@ export default function Home() {
             Built with Starkzap for the Starkzap Developer Challenge
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Network: Starknet Sepolia
+            Network: Starknet
           </p>
         </footer>
       </main>

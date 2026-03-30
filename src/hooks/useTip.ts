@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { sepoliaTokens, Amount, type Address } from "starkzap";
+import { mainnetTokens, Amount, type Address } from "starkzap";
 import type { WalletInterface } from "starkzap";
 
 export type TipToken = "STRK" | "ETH" | "USDC";
 
 const tokenMap = {
-  STRK: sepoliaTokens.STRK,
-  ETH: sepoliaTokens.ETH,
-  USDC: sepoliaTokens.USDC,
+  STRK: mainnetTokens.STRK,
+  ETH: mainnetTokens.ETH,
+  USDC: mainnetTokens.USDC,
 } as const;
 
 export interface TipState {

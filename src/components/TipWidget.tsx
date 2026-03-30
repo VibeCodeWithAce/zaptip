@@ -37,7 +37,7 @@ function truncateAddress(addr: string) {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
-const EXPLORER_BASE = "https://sepolia.voyager.online/tx/";
+const EXPLORER_BASE = "https://voyager.online/tx/";
 
 export default function TipWidget({
   creatorAddress,
