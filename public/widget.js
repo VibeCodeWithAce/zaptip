@@ -1,4 +1,4 @@
-(function () {
+ (function () {
   var script = document.currentScript;
   if (!script) return;
 
@@ -10,7 +10,7 @@
 
   // Floating button
   var btn = document.createElement("button");
-  btn.textContent = "\u26A1 Tip me";
+  btn.textContent = "\u26A1 Tip me on Starknet!";
   btn.style.cssText =
     "position:fixed;bottom:24px;right:24px;z-index:99999;" +
     "padding:12px 20px;border:none;border-radius:12px;cursor:pointer;" +
