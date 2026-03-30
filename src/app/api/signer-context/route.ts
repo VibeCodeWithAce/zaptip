@@ -7,7 +7,7 @@ interface WalletMapping {
 }
 
 // In-memory cache — survives within a single serverless instance lifetime.
-// On cold starts, wallets are re-fetched/created via Privy.
+// On cold starts, wallets are re-fetched from Privy by user_id.
 const walletCache = new Map<string, WalletMapping>();
 
 export async function POST(request: NextRequest) {
@@ -21,34 +21,53 @@ export async function POST(request: NextRequest) {
     }
 
     const accessToken = authHeader.slice(7);
+    const privy = getPrivyClient();
 
-    // Decode the JWT payload to get the user ID
-    const payload = JSON.parse(
-      Buffer.from(accessToken.split(".")[1], "base64url").toString()
-    );
-    const userId = payload.sub as string;
+    // Verify the JWT and extract the unique Privy user ID
+    const claims = await privy.utils().auth().verifyAccessToken(accessToken);
+    const userId = claims.user_id;
+
+    console.log("[signer-context] verified userId:", userId);
 
     if (!userId) {
       return NextResponse.json(
-        { error: "Invalid token: no sub claim" },
+        { error: "Invalid token: no user_id" },
         { status: 401 }
       );
     }
 
-    const privy = getPrivyClient();
-
     let walletInfo = walletCache.get(userId);
 
     if (!walletInfo) {
-      // Create a new Starknet wallet for this user via Privy
-      const wallet = await privy.wallets().create({
+      // Check if this user already has a Starknet wallet in Privy
+      let existingWallet = null;
+      for await (const w of privy.wallets().list({
+        user_id: userId,
         chain_type: "starknet",
-      });
+      })) {
+        existingWallet = w;
+        break; // take the first one
+      }
 
-      walletInfo = {
-        id: wallet.id,
-        publicKey: wallet.public_key,
-      };
+      if (existingWallet) {
+        console.log("[signer-context] found existing wallet for", userId, "walletId:", existingWallet.id);
+        walletInfo = {
+          id: existingWallet.id,
+          publicKey: existingWallet.public_key!,
+        };
+      } else {
+        // Create a new Starknet wallet linked to this user
+        console.log("[signer-context] creating new wallet for", userId);
+        const wallet = await privy.wallets().create({
+          chain_type: "starknet",
+          owner: { user_id: userId },
+        });
+        walletInfo = {
+          id: wallet.id,
+          publicKey: wallet.public_key!,
+        };
+      }
+
       walletCache.set(userId, walletInfo);
     }
 

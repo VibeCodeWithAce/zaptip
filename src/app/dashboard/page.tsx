@@ -39,7 +39,7 @@ const TOKENS: { id: WithdrawToken; label: string; icon: string }[] = [
 ];
 
 export default function DashboardPage() {
-  const { login, authenticated } = usePrivy();
+  const { login, authenticated, user } = usePrivy();
   const {
     wallet,
     address,
@@ -179,17 +179,7 @@ export default function DashboardPage() {
                   Deploy Wallet
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Your wallet needs to be deployed first. Fund it with STRK from
-                  the{" "}
-                  <a
-                    href="https://starknet-faucet.vercel.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Sepolia faucet
-                  </a>
-                  , then deploy.
+                  Your wallet needs to be deployed first. Fund it with STRK, then deploy.
                 </p>
               </div>
               {address && (
@@ -247,6 +237,13 @@ export default function DashboardPage() {
       <Navbar />
       <main className="flex flex-1 flex-col items-center bg-background p-4 pt-8">
         <div className="w-full max-w-lg space-y-6">
+          {/* Logged-in user info */}
+          {user?.email && (
+            <p className="text-center text-xs text-muted-foreground">
+              Signed in as {user.email.address}
+            </p>
+          )}
+
           {/* Your Tip Page */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-lg space-y-4">
             <h2 className="text-base font-semibold text-card-foreground">

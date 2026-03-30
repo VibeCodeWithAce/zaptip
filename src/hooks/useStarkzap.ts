@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import {
   StarkZap,
@@ -160,10 +160,32 @@ export function useStarkzap() {
     }
   }, []);
 
+  const disconnect = useCallback(() => {
+    walletRef.current = null;
+    sdkInstance = null;
+    setState({
+      wallet: null,
+      address: null,
+      isConnecting: false,
+      isDeploying: false,
+      isDeployed: false,
+      error: null,
+      balances: { STRK: null, ETH: null, USDC: null },
+    });
+  }, []);
+
+  // Auto-clear wallet state when user logs out
+  useEffect(() => {
+    if (!authenticated && walletRef.current) {
+      disconnect();
+    }
+  }, [authenticated, disconnect]);
+
   return {
     ...state,
     connect,
     deploy,
+    disconnect,
     refreshBalances,
     sdk: getSDK(),
   };
