@@ -165,7 +165,12 @@ export default function TipPage({
       )}
 
       {/* Footer */}
-      {!isEmbed && (
+      {isEmbed ? (
+        <p className="text-center text-muted-foreground/60" style={{ fontSize: 12 }}>
+          <Zap className="inline h-3 w-3 -mt-px mr-0.5" />
+          Powered by ZapTip
+        </p>
+      ) : (
         <p className="text-center text-xs text-muted-foreground">
           Powered by ZapTip on Starknet
         </p>
