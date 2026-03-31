@@ -16,6 +16,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract the user's Privy access token for authorization
+    const authHeader = request.headers.get("authorization");
+    const userAccessToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : null;
+
+    if (!userAccessToken) {
+      return NextResponse.json(
+        { error: "Missing authorization header" },
+        { status: 401 }
+      );
+    }
+
     const privy = getPrivyClient();
 
     // Validate the wallet exists and belongs to this app
@@ -33,6 +46,9 @@ export async function POST(request: NextRequest) {
 
     const result = await privy.wallets().rawSign(walletId, {
       params: { hash },
+      authorization_context: {
+        user_jwts: [userAccessToken],
+      },
     });
 
     console.log("[sign] Success, signature length:", result.signature?.length);
