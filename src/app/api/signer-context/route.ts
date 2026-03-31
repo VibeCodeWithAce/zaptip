@@ -6,8 +6,9 @@ interface WalletMapping {
   publicKey: string;
 }
 
-// In-memory cache — survives within a single serverless instance lifetime.
-// On cold starts, wallets are re-fetched from Privy by user_id.
+// In-memory cache — maps Privy userId to their server wallet.
+// Server wallets have no owner, so this cache is the only user→wallet link.
+// On cold starts or new instances, a new wallet will be created.
 const walletCache = new Map<string, WalletMapping>();
 
 export async function POST(request: NextRequest) {
@@ -39,35 +40,15 @@ export async function POST(request: NextRequest) {
     let walletInfo = walletCache.get(userId);
 
     if (!walletInfo) {
-      // Check if this user already has a Starknet wallet in Privy
-      let existingWallet = null;
-      for await (const w of privy.wallets().list({
-        user_id: userId,
+      // Create a server wallet (no owner) for this user
+      console.log("[signer-context] creating server wallet for", userId);
+      const wallet = await privy.wallets().create({
         chain_type: "starknet",
-      })) {
-        existingWallet = w;
-        break; // take the first one
-      }
-
-      if (existingWallet) {
-        console.log("[signer-context] found existing wallet for", userId, "walletId:", existingWallet.id);
-        walletInfo = {
-          id: existingWallet.id,
-          publicKey: existingWallet.public_key!,
-        };
-      } else {
-        // Create a new Starknet wallet linked to this user
-        console.log("[signer-context] creating new wallet for", userId);
-        const wallet = await privy.wallets().create({
-          chain_type: "starknet",
-          owner: { user_id: userId },
-        });
-        walletInfo = {
-          id: wallet.id,
-          publicKey: wallet.public_key!,
-        };
-      }
-
+      });
+      walletInfo = {
+        id: wallet.id,
+        publicKey: wallet.public_key!,
+      };
       walletCache.set(userId, walletInfo);
     }
 

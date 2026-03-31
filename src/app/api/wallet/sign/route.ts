@@ -16,39 +16,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract the user's Privy access token for authorization
-    const authHeader = request.headers.get("authorization");
-    const userAccessToken = authHeader?.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : null;
-
-    if (!userAccessToken) {
-      return NextResponse.json(
-        { error: "Missing authorization header" },
-        { status: 401 }
-      );
-    }
-
     const privy = getPrivyClient();
-
-    // Validate the wallet exists and belongs to this app
-    const wallet = await privy.wallets().get(walletId);
-    if (!wallet) {
-      console.error("[sign] Wallet not found:", walletId);
-      return NextResponse.json(
-        { error: "Wallet not found or not accessible" },
-        { status: 404 }
-      );
-    }
-    console.log("[sign] Wallet verified:", { id: wallet.id, ownerId: wallet.owner_id, chain: wallet.chain_type });
 
     console.log("[sign] Calling privy.wallets().rawSign for wallet:", walletId);
 
     const result = await privy.wallets().rawSign(walletId, {
       params: { hash },
-      authorization_context: {
-        user_jwts: [userAccessToken],
-      },
     });
 
     console.log("[sign] Success, signature length:", result.signature?.length);

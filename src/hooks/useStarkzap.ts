@@ -86,11 +86,7 @@ export function useStarkzap() {
               const body = await res.json().catch(() => ({}));
               throw new Error(body.error || `Signer context failed: ${res.status}`);
             }
-            const ctx = await res.json();
-            return {
-              ...ctx,
-              headers: { Authorization: `Bearer ${accessToken}` },
-            };
+            return res.json();
           },
         },
         accountPreset: "openzeppelin",
