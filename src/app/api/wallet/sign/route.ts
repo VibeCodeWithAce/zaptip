@@ -16,26 +16,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const authorizationKey = process.env.PRIVY_AUTHORIZATION_KEY;
-    if (!authorizationKey) {
-      console.error("[sign] PRIVY_AUTHORIZATION_KEY is not set");
+    const privy = getPrivyClient();
+
+    // Validate the wallet exists and belongs to this app
+    const wallet = await privy.wallets().get(walletId);
+    if (!wallet) {
+      console.error("[sign] Wallet not found:", walletId);
       return NextResponse.json(
-        { error: "Server misconfiguration: missing wallet authorization key" },
-        { status: 500 }
+        { error: "Wallet not found or not accessible" },
+        { status: 404 }
       );
     }
-
-    const privy = getPrivyClient();
+    console.log("[sign] Wallet verified:", { id: wallet.id, ownerId: wallet.owner_id, chain: wallet.chain_type });
 
     console.log("[sign] Calling privy.wallets().rawSign for wallet:", walletId);
 
-    // Use Privy to sign the hash with the wallet's private key
-    const result = await privy.wallets().rawSign(walletId, {
+    // Build rawSign options — include authorization key only if configured
+    const authorizationKey = process.env.PRIVY_AUTHORIZATION_KEY;
+    const rawSignOptions: Parameters<typeof privy.wallets.prototype.rawSign>[1] = {
       params: { hash },
-      authorization_context: {
-        authorization_private_keys: [authorizationKey],
-      },
-    });
+      ...(authorizationKey && {
+        authorization_context: {
+          authorization_private_keys: [authorizationKey],
+        },
+      }),
+    };
+
+    const result = await privy.wallets().rawSign(walletId, rawSignOptions);
 
     console.log("[sign] Success, signature length:", result.signature?.length);
 
