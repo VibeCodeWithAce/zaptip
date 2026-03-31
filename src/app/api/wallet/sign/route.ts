@@ -23,6 +23,9 @@ export async function POST(request: NextRequest) {
     // Use Privy to sign the hash with the wallet's private key
     const result = await privy.wallets().rawSign(walletId, {
       params: { hash },
+      authorization_context: {
+        authorization_private_keys: [process.env.PRIVY_AUTHORIZATION_KEY!],
+      },
     });
 
     console.log("[sign] Success, signature length:", result.signature?.length);
