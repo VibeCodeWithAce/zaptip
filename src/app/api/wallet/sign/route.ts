@@ -16,6 +16,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const authorizationKey = process.env.PRIVY_AUTHORIZATION_KEY;
+    if (!authorizationKey) {
+      console.error("[sign] PRIVY_AUTHORIZATION_KEY is not set");
+      return NextResponse.json(
+        { error: "Server misconfiguration: missing wallet authorization key" },
+        { status: 500 }
+      );
+    }
+
     const privy = getPrivyClient();
 
     console.log("[sign] Calling privy.wallets().rawSign for wallet:", walletId);
@@ -24,7 +33,7 @@ export async function POST(request: NextRequest) {
     const result = await privy.wallets().rawSign(walletId, {
       params: { hash },
       authorization_context: {
-        authorization_private_keys: [process.env.PRIVY_AUTHORIZATION_KEY!],
+        authorization_private_keys: [authorizationKey],
       },
     });
 
