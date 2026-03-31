@@ -273,28 +273,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Tip URL */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Tip Link
-              </label>
-              <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
-                <span className="text-xs font-mono text-muted-foreground truncate flex-1">
-                  {tipUrl}
-                </span>
-                <button
-                  onClick={() => copyText(tipUrl, setCopiedUrl)}
-                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {copiedUrl ? (
-                    <Check className="h-3.5 w-3.5 text-green-500" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
             {/* Embed Code */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -310,6 +288,28 @@ export default function DashboardPage() {
                   className="shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5"
                 >
                   {copiedEmbed ? (
+                    <Check className="h-3.5 w-3.5 text-green-500" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Tip URL */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Tip Link
+              </label>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
+                <span className="text-xs font-mono text-muted-foreground truncate flex-1">
+                  {tipUrl}
+                </span>
+                <button
+                  onClick={() => copyText(tipUrl, setCopiedUrl)}
+                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {copiedUrl ? (
                     <Check className="h-3.5 w-3.5 text-green-500" />
                   ) : (
                     <Copy className="h-3.5 w-3.5" />
