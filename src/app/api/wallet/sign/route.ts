@@ -31,18 +31,9 @@ export async function POST(request: NextRequest) {
 
     console.log("[sign] Calling privy.wallets().rawSign for wallet:", walletId);
 
-    // Build rawSign options — include authorization key only if configured
-    const authorizationKey = process.env.PRIVY_AUTHORIZATION_KEY;
-    const rawSignOptions: Parameters<typeof privy.wallets.prototype.rawSign>[1] = {
+    const result = await privy.wallets().rawSign(walletId, {
       params: { hash },
-      ...(authorizationKey && {
-        authorization_context: {
-          authorization_private_keys: [authorizationKey],
-        },
-      }),
-    };
-
-    const result = await privy.wallets().rawSign(walletId, rawSignOptions);
+    });
 
     console.log("[sign] Success, signature length:", result.signature?.length);
 
