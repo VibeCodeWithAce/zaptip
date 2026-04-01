@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPrivyClient } from "@/lib/privy-server";
+import { redis } from "@/lib/redis";
 
 interface WalletMapping {
   id: string;
   publicKey: string;
 }
-
-// In-memory cache — maps Privy userId to their server wallet.
-// Server wallets have no owner, so this cache is the only user→wallet link.
-// On cold starts or new instances, a new wallet will be created.
-const walletCache = new Map<string, WalletMapping>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,9 +33,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let walletInfo = walletCache.get(userId);
+    // Check Redis for an existing wallet mapping
+    const existing = await redis.get<WalletMapping>(`wallet:${userId}`);
 
-    if (!walletInfo) {
+    let walletInfo: WalletMapping;
+
+    if (existing) {
+      console.log("[signer-context] Found existing wallet for user:", userId, existing.id);
+      walletInfo = existing;
+    } else {
       // Create a server wallet (no owner) for this user
       console.log("[signer-context] creating server wallet for", userId);
       const wallet = await privy.wallets().create({
@@ -49,7 +51,8 @@ export async function POST(request: NextRequest) {
         id: wallet.id,
         publicKey: wallet.public_key!,
       };
-      walletCache.set(userId, walletInfo);
+      await redis.set(`wallet:${userId}`, walletInfo);
+      console.log("[signer-context] Created new wallet for user:", userId, wallet.id);
     }
 
     // Return wallet info + the URL of our signing endpoint
