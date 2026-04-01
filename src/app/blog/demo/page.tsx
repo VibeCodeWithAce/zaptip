@@ -238,7 +238,7 @@ export default function BlogDemoPage() {
       {/* ZapTip widget */}
       <Script
         src="https://zaptip.vercel.app/widget.js"
-        data-creator="0x0198c3fcfd8a6d2ddd057c49c70ea813163587689a4938d5be4e26cc441413be"
+        data-creator="0x05657ee78e1ce7a7946ec39a293fae25ad67c697e6b0874d423cbbd81aab0025"
         strategy="lazyOnload"
       />
     </>

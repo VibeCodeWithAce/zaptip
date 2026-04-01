@@ -14,6 +14,8 @@ import {
   Loader2,
   AlertCircle,
   Lock,
+  Copy,
+  Check,
 } from "lucide-react";
 
 interface TipWidgetProps {
@@ -50,6 +52,7 @@ export default function TipWidget({
   const [amount, setAmount] = useState("1");
   const [isPrivate, setIsPrivate] = useState(false);
 
+  const [copiedAddr, setCopiedAddr] = useState(false);
   const { isLoading, txHash, error, sendTip, reset } = useTip(wallet);
 
   const handleSend = () => {
@@ -130,6 +133,32 @@ export default function TipWidget({
         </div>
 
         <div className="px-6 pb-6 space-y-5">
+          {/* Tipper wallet address */}
+          {wallet && (
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                Your wallet
+              </span>
+              <span className="text-xs font-mono text-muted-foreground truncate">
+                {truncateAddress(wallet.address.toString())}
+              </span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(wallet.address.toString());
+                  setCopiedAddr(true);
+                  setTimeout(() => setCopiedAddr(false), 1500);
+                }}
+                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {copiedAddr ? (
+                  <Check className="h-3 w-3 text-green-500" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </button>
+            </div>
+          )}
+
           {/* Token selector */}
           <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">

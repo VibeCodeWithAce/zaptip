@@ -39,6 +39,7 @@ ZapTip lets anyone accept crypto tips on any website with a single line of code.
 - [shadcn/ui](https://ui.shadcn.com/) — UI components (base-nova style)
 - [Starkzap SDK](https://www.starkzap.com/) — Starknet wallet management and transactions
 - [Privy](https://privy.io/) — Social authentication and wallet creation
+- [Upstash Redis](https://upstash.com/) — Persistent user-to-wallet mapping
 
 ## Getting Started
 
@@ -46,6 +47,7 @@ ZapTip lets anyone accept crypto tips on any website with a single line of code.
 
 - Node.js 18+
 - A [Privy](https://dashboard.privy.io/) account with app ID and secret
+- An [Upstash Redis](https://console.upstash.com/) database (or Vercel KV)
 
 ### Setup
 
@@ -68,6 +70,8 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_PRIVY_APP_ID` | Yes | Privy app ID from dashboard.privy.io |
 | `PRIVY_APP_SECRET` | Yes | Privy app secret for server-side wallet creation |
 | `NEXT_PUBLIC_STARKNET_NETWORK` | Yes | Network name (`mainnet`) |
+| `KV_REST_API_URL` | Yes | Upstash Redis REST URL |
+| `KV_REST_API_TOKEN` | Yes | Upstash Redis REST token |
 | `NEXT_PUBLIC_APP_URL` | No | Override app URL (auto-detected in dev) |
 
 ### Run
@@ -87,7 +91,7 @@ src/
     dashboard/page.tsx    — Creator dashboard (balances, tip link, withdraw)
     tip/[creatorId]/      — Tip page (supports ?embed=true for iframes)
     api/
-      signer-context/     — Creates/retrieves Privy Starknet wallets
+      signer-context/     — Creates/retrieves Privy Starknet wallets (Redis-backed)
       wallet/sign/        — Signing endpoint for Starkzap SDK
   components/
     Navbar.tsx            — Shared navigation bar
@@ -97,11 +101,14 @@ src/
     useStarkzap.ts        — SDK init, wallet connection, deploy, balances
     useTip.ts             — Token transfer logic for tipping
     useWithdraw.ts        — Token transfer logic for withdrawals
+  lib/
+    privy-server.ts       — Privy client for server-side operations
+    redis.ts              — Upstash Redis client for wallet persistence
 public/
   widget.js               — Embeddable script (floating button + iframe)
 ```
 
-**Flow:** Privy handles social login and creates a server-managed Starknet wallet. The Starkzap SDK onboards the wallet using the OpenZeppelin account preset. Users fund their wallet, deploy it, then send ERC-20 transfers to creator addresses.
+**Flow:** Privy handles social login and creates a server-managed Starknet wallet. The wallet mapping is persisted in Upstash Redis so it survives cold starts and redeploys. The Starkzap SDK onboards the wallet using the OpenZeppelin account preset. Users fund their wallet, deploy it, then send ERC-20 transfers to creator addresses.
 
 ## Embed Widget
 
