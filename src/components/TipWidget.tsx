@@ -156,7 +156,7 @@ export default function TipWidget({
           amount: tongoAmount,
           sender: senderAddress,
         })
-        .send();
+        .send({ feeMode: "user_pays" });
 
       setPrivateTxHash(fundTx.hash);
       await fundTx.wait();
@@ -170,7 +170,7 @@ export default function TipWidget({
           to: creatorRecipient,
           sender: senderAddress,
         })
-        .send();
+        .send({ feeMode: "user_pays" });
 
       setPrivateTxHash(transferTx.hash);
       await transferTx.wait();

@@ -121,7 +121,7 @@ export default function DashboardPage() {
     try {
       const tx = await wallet.tx()
         .add(...await confidential.rollover({ sender: address as Address }))
-        .send();
+        .send({ feeMode: "user_pays" });
       await tx.wait();
       await refreshConfidentialState();
     } catch (err) {
@@ -143,7 +143,7 @@ export default function DashboardPage() {
           to: address as Address,
           sender: address as Address,
         }))
-        .send();
+        .send({ feeMode: "user_pays" });
       setConfTxHash(tx.hash);
       await tx.wait();
       await refreshConfidentialState();
