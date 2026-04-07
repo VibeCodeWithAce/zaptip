@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useStarkzap } from "@/hooks/useStarkzap";
 import { useWithdraw, type WithdrawToken } from "@/hooks/useWithdraw";
+import { useConfidential } from "@/hooks/useConfidential";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
-import type { Amount } from "starkzap";
+import type { Amount as AmountType } from "starkzap";
+import { Amount, type Address } from "starkzap";
+import { mainnetTokens } from "starkzap";
 import {
   Wallet,
   Copy,
@@ -22,6 +25,8 @@ import {
   Zap,
   Share2,
   Code2,
+  ShieldCheck,
+  ArrowDownToLine,
 } from "lucide-react";
 
 const TIP_BASE_URL = "https://zaptip.vercel.app/tip/";
@@ -39,7 +44,7 @@ const TOKENS: { id: WithdrawToken; label: string; icon: string }[] = [
 ];
 
 export default function DashboardPage() {
-  const { login, authenticated, user } = usePrivy();
+  const { login, authenticated, user, getAccessToken } = usePrivy();
   const {
     wallet,
     address,
@@ -53,13 +58,134 @@ export default function DashboardPage() {
   } = useStarkzap();
 
   const { isLoading: isWithdrawing, txHash, error: withdrawError, withdraw, reset: resetWithdraw } = useWithdraw(wallet);
+  const {
+    isInitializing: isConfidentialInit,
+    confidential,
+    recipientId,
+    tongoAddress,
+    state: confidentialState,
+    isLoadingState: isConfidentialLoading,
+    initialize: initConfidential,
+    refreshState: refreshConfidentialState,
+    error: confidentialError,
+  } = useConfidential(wallet);
 
   const [copiedAddr, setCopiedAddr] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
+  const [copiedTongo, setCopiedTongo] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState<WithdrawToken | null>(null);
   const [withdrawAddr, setWithdrawAddr] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+
+  // Confidential operations state
+  const [isRollingOver, setIsRollingOver] = useState(false);
+  const [isConfWithdrawing, setIsConfWithdrawing] = useState(false);
+  const [confWithdrawAddr, setConfWithdrawAddr] = useState("");
+  const [confWithdrawAmount, setConfWithdrawAmount] = useState("");
+  const [confWithdrawModal, setConfWithdrawModal] = useState(false);
+  const [confTxHash, setConfTxHash] = useState<string | null>(null);
+  const [confError, setConfError] = useState<string | null>(null);
+  const confidentialInitRef = useRef(false);
+
+  // Auto-initialize confidential account when dashboard loads with a deployed wallet
+  useEffect(() => {
+    if (!wallet || !isDeployed || !authenticated || confidentialInitRef.current) return;
+    confidentialInitRef.current = true;
+
+    (async () => {
+      const token = await getAccessToken();
+      if (!token) return;
+      const inst = await initConfidential(token);
+      if (inst && address) {
+        // Store recipientId so tippers can look it up
+        const rid = inst.recipientId;
+        await fetch("/api/tongo-recipient", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            address,
+            recipient: { x: String(rid.x), y: String(rid.y) },
+          }),
+        });
+        // Fetch initial state
+        try {
+          await refreshConfidentialState();
+        } catch {
+          // state fetch may fail if account has no activity yet — that's fine
+        }
+      }
+    })();
+  }, [wallet, isDeployed, authenticated, address, getAccessToken, initConfidential, refreshConfidentialState]);
+
+  const handleRollover = async () => {
+    if (!confidential || !wallet || !address) return;
+    setIsRollingOver(true);
+    setConfError(null);
+    try {
+      const tx = await wallet.tx()
+        .add(...await confidential.rollover({ sender: address as Address }))
+        .send();
+      await tx.wait();
+      await refreshConfidentialState();
+    } catch (err) {
+      console.error("[Dashboard] rollover error:", err);
+      setConfError(err instanceof Error ? err.message : "Rollover failed");
+    } finally {
+      setIsRollingOver(false);
+    }
+  };
+
+  const handleConfWithdraw = async () => {
+    if (!confidential || !wallet || !address || !confWithdrawAddr || !confWithdrawAmount) return;
+    setIsConfWithdrawing(true);
+    setConfError(null);
+    setConfTxHash(null);
+    try {
+      // Convert user-entered ERC20 amount to tongo units for the withdraw call
+      const tongoUnits = await confidential.toConfidentialUnits(
+        Amount.parse(confWithdrawAmount, mainnetTokens.STRK)
+      );
+      const tx = await wallet.tx()
+        .add(...await confidential.withdraw({
+          amount: Amount.fromRaw(tongoUnits, mainnetTokens.STRK),
+          to: confWithdrawAddr as Address,
+          sender: address as Address,
+        }))
+        .send();
+      setConfTxHash(tx.hash);
+      await tx.wait();
+      await refreshConfidentialState();
+    } catch (err) {
+      console.error("[Dashboard] conf withdraw error:", err);
+      setConfError(err instanceof Error ? err.message : "Withdraw failed");
+    } finally {
+      setIsConfWithdrawing(false);
+    }
+  };
+
+  const handleConfRagequit = async () => {
+    if (!confidential || !wallet || !address) return;
+    setIsConfWithdrawing(true);
+    setConfError(null);
+    setConfTxHash(null);
+    try {
+      const tx = await wallet.tx()
+        .add(...await confidential.ragequit({
+          to: address as Address,
+          sender: address as Address,
+        }))
+        .send();
+      setConfTxHash(tx.hash);
+      await tx.wait();
+      await refreshConfidentialState();
+    } catch (err) {
+      console.error("[Dashboard] ragequit error:", err);
+      setConfError(err instanceof Error ? err.message : "Ragequit failed");
+    } finally {
+      setIsConfWithdrawing(false);
+    }
+  };
 
   const tipUrl = address ? `${TIP_BASE_URL}${address}` : "";
   const embedCode = address
@@ -91,7 +217,7 @@ export default function DashboardPage() {
     resetWithdraw();
   };
 
-  const getBalance = (token: WithdrawToken): Amount | null => balances[token];
+  const getBalance = (token: WithdrawToken): AmountType | null => balances[token];
 
   // Not authenticated
   if (!authenticated) {
@@ -387,21 +513,155 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Private Tips — Coming Soon */}
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-lg">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <Lock className="h-5 w-5 text-primary" />
+          {/* Private Tips */}
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                  <Lock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-card-foreground">
+                    Private Tips
+                  </h2>
+                  {isConfidentialInit ? (
+                    <p className="text-sm text-muted-foreground">Setting up...</p>
+                  ) : confidential ? (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <ShieldCheck className="h-3.5 w-3.5 text-green-500" />
+                      Active
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {confidentialError || "Not initialized"}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <h2 className="text-base font-semibold text-card-foreground">
-                  Private Tips
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Confidential tip history — coming soon
-                </p>
-              </div>
+              {confidential && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => refreshConfidentialState()}
+                  disabled={isConfidentialLoading}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${isConfidentialLoading ? "animate-spin" : ""}`} />
+                </Button>
+              )}
             </div>
+
+            {/* Tongo address */}
+            {tongoAddress && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Tongo Address
+                </label>
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs font-mono text-muted-foreground truncate flex-1">
+                    {tongoAddress}
+                  </span>
+                  <button
+                    onClick={() => copyText(tongoAddress, setCopiedTongo)}
+                    className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {copiedTongo ? (
+                      <Check className="h-3.5 w-3.5 text-green-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Confidential balances */}
+            {confidential && confidentialState && (
+              <div className="space-y-2">
+                {/* Active balance */}
+                <div className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Active Balance</p>
+                    <p className="text-sm font-medium text-card-foreground font-mono">
+                      {confidentialState.balance.toString()} tongo
+                    </p>
+                  </div>
+                  {confidentialState.balance > 0n && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setConfWithdrawModal(true);
+                        setConfWithdrawAddr("");
+                        setConfWithdrawAmount("");
+                        setConfTxHash(null);
+                        setConfError(null);
+                      }}
+                    >
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                      Withdraw
+                    </Button>
+                  )}
+                </div>
+
+                {/* Pending balance */}
+                <div className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pending Balance</p>
+                    <p className="text-sm font-medium text-card-foreground font-mono">
+                      {confidentialState.pending.toString()} tongo
+                    </p>
+                  </div>
+                  {confidentialState.pending > 0n && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRollover}
+                      disabled={isRollingOver}
+                    >
+                      {isRollingOver ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Activating...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDownToLine className="h-3.5 w-3.5" />
+                          Activate
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Ragequit: emergency full withdrawal */}
+                {(confidentialState.balance > 0n || confidentialState.pending > 0n) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-destructive border-destructive/30 hover:bg-destructive/5"
+                    onClick={handleConfRagequit}
+                    disabled={isConfWithdrawing}
+                  >
+                    {isConfWithdrawing && !confWithdrawModal ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Withdrawing all...
+                      </>
+                    ) : (
+                      "Emergency Withdraw All"
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {confError && (
+              <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5">
+                <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                <p className="text-sm text-destructive">{confError}</p>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -519,6 +779,124 @@ export default function DashboardPage() {
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
                         {txHash ? "Confirming..." : "Sending..."}
+                      </>
+                    ) : (
+                      "Confirm"
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Confidential Withdraw Modal */}
+      {confWithdrawModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-lg space-y-4">
+            {confTxHash && !isConfWithdrawing ? (
+              <div className="flex flex-col items-center gap-4 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
+                  <CheckCircle2 className="h-7 w-7 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-card-foreground">
+                    Private Withdrawal Sent!
+                  </h3>
+                </div>
+                <a
+                  href={`${EXPLORER_BASE}${confTxHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                >
+                  View on Voyager
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setConfWithdrawModal(false);
+                    setConfTxHash(null);
+                    refreshConfidentialState();
+                  }}
+                >
+                  Done
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <h3 className="text-lg font-semibold text-card-foreground">
+                    Withdraw Private Tips
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Active balance: {confidentialState?.balance.toString() ?? "0"} tongo
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Recipient Address
+                    </label>
+                    <Input
+                      placeholder="0x..."
+                      value={confWithdrawAddr}
+                      onChange={(e) => setConfWithdrawAddr(e.target.value)}
+                      className="font-mono text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Amount (in token units)
+                    </label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0.0"
+                      value={confWithdrawAmount}
+                      onChange={(e) => setConfWithdrawAmount(e.target.value)}
+                      className="font-mono"
+                    />
+                  </div>
+                </div>
+
+                {confError && (
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5">
+                    <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                    <p className="text-sm text-destructive">{confError}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setConfWithdrawModal(false);
+                      setConfError(null);
+                    }}
+                    disabled={isConfWithdrawing}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleConfWithdraw}
+                    disabled={
+                      isConfWithdrawing ||
+                      !confWithdrawAddr ||
+                      !confWithdrawAmount ||
+                      parseFloat(confWithdrawAmount) <= 0
+                    }
+                  >
+                    {isConfWithdrawing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {confTxHash ? "Confirming..." : "Sending..."}
                       </>
                     ) : (
                       "Confirm"

@@ -66,10 +66,11 @@ export async function POST(request: NextRequest) {
       publicKey: walletInfo.publicKey,
       serverUrl: `${baseUrl}/api/wallet/sign`,
     });
-  } catch (error) {
-    console.error("Signer context error:", error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error("[signer-context] UNHANDLED ERROR:", err.message, err.stack);
     return NextResponse.json(
-      { error: "Failed to resolve signer context" },
+      { error: err.message },
       { status: 500 }
     );
   }
