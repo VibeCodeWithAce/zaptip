@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
 import type { Amount as AmountType } from "starkzap";
-import { Amount, type Address } from "starkzap";
-import { mainnetTokens } from "starkzap";
+import { type Address } from "starkzap";
 import {
   Wallet,
   Copy,
@@ -81,9 +80,6 @@ export default function DashboardPage() {
   // Confidential operations state
   const [isRollingOver, setIsRollingOver] = useState(false);
   const [isConfWithdrawing, setIsConfWithdrawing] = useState(false);
-  const [confWithdrawAddr, setConfWithdrawAddr] = useState("");
-  const [confWithdrawAmount, setConfWithdrawAmount] = useState("");
-  const [confWithdrawModal, setConfWithdrawModal] = useState(false);
   const [confTxHash, setConfTxHash] = useState<string | null>(null);
   const [confError, setConfError] = useState<string | null>(null);
   const confidentialInitRef = useRef(false);
@@ -133,34 +129,6 @@ export default function DashboardPage() {
       setConfError(err instanceof Error ? err.message : "Rollover failed");
     } finally {
       setIsRollingOver(false);
-    }
-  };
-
-  const handleConfWithdraw = async () => {
-    if (!confidential || !wallet || !address || !confWithdrawAddr || !confWithdrawAmount) return;
-    setIsConfWithdrawing(true);
-    setConfError(null);
-    setConfTxHash(null);
-    try {
-      // Convert user-entered ERC20 amount to tongo units for the withdraw call
-      const tongoUnits = await confidential.toConfidentialUnits(
-        Amount.parse(confWithdrawAmount, mainnetTokens.STRK)
-      );
-      const tx = await wallet.tx()
-        .add(...await confidential.withdraw({
-          amount: Amount.fromRaw(tongoUnits, mainnetTokens.STRK),
-          to: confWithdrawAddr as Address,
-          sender: address as Address,
-        }))
-        .send();
-      setConfTxHash(tx.hash);
-      await tx.wait();
-      await refreshConfidentialState();
-    } catch (err) {
-      console.error("[Dashboard] conf withdraw error:", err);
-      setConfError(err instanceof Error ? err.message : "Withdraw failed");
-    } finally {
-      setIsConfWithdrawing(false);
     }
   };
 
@@ -586,22 +554,6 @@ export default function DashboardPage() {
                       {confidentialState.balance.toString()} tongo
                     </p>
                   </div>
-                  {confidentialState.balance > 0n && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setConfWithdrawModal(true);
-                        setConfWithdrawAddr("");
-                        setConfWithdrawAmount("");
-                        setConfTxHash(null);
-                        setConfError(null);
-                      }}
-                    >
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                      Withdraw
-                    </Button>
-                  )}
                 </div>
 
                 {/* Pending balance */}
@@ -634,22 +586,25 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                {/* Ragequit: emergency full withdrawal */}
+                {/* Withdraw all — uses ragequit to exit entire balance */}
                 {(confidentialState.balance > 0n || confidentialState.pending > 0n) && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full text-destructive border-destructive/30 hover:bg-destructive/5"
+                    className="w-full"
                     onClick={handleConfRagequit}
                     disabled={isConfWithdrawing}
                   >
-                    {isConfWithdrawing && !confWithdrawModal ? (
+                    {isConfWithdrawing ? (
                       <>
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Withdrawing all...
+                        {confTxHash ? "Confirming..." : "Withdrawing..."}
                       </>
                     ) : (
-                      "Emergency Withdraw All"
+                      <>
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                        Withdraw All Private Tips
+                      </>
                     )}
                   </Button>
                 )}
@@ -791,121 +746,29 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Confidential Withdraw Modal */}
-      {confWithdrawModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-lg space-y-4">
-            {confTxHash && !isConfWithdrawing ? (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
-                  <CheckCircle2 className="h-7 w-7 text-green-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-card-foreground">
-                    Private Withdrawal Sent!
-                  </h3>
-                </div>
-                <a
-                  href={`${EXPLORER_BASE}${confTxHash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-                >
-                  View on Voyager
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setConfWithdrawModal(false);
-                    setConfTxHash(null);
-                    refreshConfidentialState();
-                  }}
-                >
-                  Done
-                </Button>
-              </div>
-            ) : (
-              <>
-                <div>
-                  <h3 className="text-lg font-semibold text-card-foreground">
-                    Withdraw Private Tips
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Active balance: {confidentialState?.balance.toString() ?? "0"} tongo
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Recipient Address
-                    </label>
-                    <Input
-                      placeholder="0x..."
-                      value={confWithdrawAddr}
-                      onChange={(e) => setConfWithdrawAddr(e.target.value)}
-                      className="font-mono text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Amount (in token units)
-                    </label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="0.0"
-                      value={confWithdrawAmount}
-                      onChange={(e) => setConfWithdrawAmount(e.target.value)}
-                      className="font-mono"
-                    />
-                  </div>
-                </div>
-
-                {confError && (
-                  <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5">
-                    <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                    <p className="text-sm text-destructive">{confError}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      setConfWithdrawModal(false);
-                      setConfError(null);
-                    }}
-                    disabled={isConfWithdrawing}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={handleConfWithdraw}
-                    disabled={
-                      isConfWithdrawing ||
-                      !confWithdrawAddr ||
-                      !confWithdrawAmount ||
-                      parseFloat(confWithdrawAmount) <= 0
-                    }
-                  >
-                    {isConfWithdrawing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        {confTxHash ? "Confirming..." : "Sending..."}
-                      </>
-                    ) : (
-                      "Confirm"
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
+      {/* Confidential ragequit success toast */}
+      {confTxHash && !isConfWithdrawing && (
+        <div className="fixed bottom-4 right-4 z-50 w-80 rounded-2xl border border-border bg-card p-4 shadow-lg space-y-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <p className="text-sm font-medium text-card-foreground">Private Tips Withdrawn!</p>
           </div>
+          <a
+            href={`${EXPLORER_BASE}${confTxHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            View on Voyager <ExternalLink className="h-3 w-3" />
+          </a>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => { setConfTxHash(null); refreshConfidentialState(); }}
+          >
+            Dismiss
+          </Button>
         </div>
       )}
     </>
