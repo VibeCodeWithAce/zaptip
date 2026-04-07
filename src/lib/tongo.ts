@@ -2,4 +2,4 @@
 // The contract address is set via env var so it can be updated without a redeploy.
 export const TONGO_CONTRACT_ADDRESS =
   process.env.NEXT_PUBLIC_TONGO_CONTRACT_ADDRESS ??
-  "0x03878c9fed06800adad7e4c15c8e3a0c53a1eba5c4e8b7a3ab4270e2a9e4dce1";
+  "0x3a542d7eb73b3e33a2c54e9827ec17a6365e289ec35ccc94dde97950d9db498";
