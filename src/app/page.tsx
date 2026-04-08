@@ -12,6 +12,7 @@ import {
   Wallet,
   ArrowLeftRight,
   Shield,
+  Lock,
   KeyRound,
   Copy,
   Check,
@@ -62,6 +63,11 @@ const MODULES = [
     icon: Shield,
     label: "Tx Builder",
     desc: "Composable transaction execution on Starknet",
+  },
+  {
+    icon: Lock,
+    label: "Tongo Confidential",
+    desc: "Private tipping with hidden on-chain amounts",
   },
 ];
 
@@ -206,7 +212,7 @@ export default function Home() {
               {MODULES.map((mod) => (
                 <div
                   key={mod.label}
-                  className="flex items-start gap-4 rounded-xl border border-border bg-card p-5 last:sm:col-span-2 last:sm:max-w-[calc(50%-0.5rem)] last:sm:mx-auto"
+                  className="flex items-start gap-4 rounded-xl border border-border bg-card p-5"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <mod.icon className="h-5 w-5 text-primary" />
