@@ -74,7 +74,7 @@ export default function BlogDemoPage() {
               Knightt&rsquo;s Corner
             </span>
             <div className="blog-sans flex items-center gap-6 text-xs text-white/30 tracking-wide">
-              <span className="hover:text-white/60 transition-colors cursor-pointer">Home</span>
+              <a href="https://zaptip.vercel.app" className="hover:text-white/60 transition-colors cursor-pointer">Home</a>
               <span className="text-white/10">&middot;</span>
               <span className="hover:text-white/60 transition-colors cursor-pointer">Archive</span>
               <span className="text-white/10">&middot;</span>

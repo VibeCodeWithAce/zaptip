@@ -16,7 +16,8 @@ ZapTip lets anyone accept crypto tips on any website with a single line of code.
 
 - **Social Login** — Sign in with Google, Twitter, or email via Privy. No crypto wallet required.
 - **Multi-Token Tips** — Accept tips in STRK, ETH, and USDC on Starknet.
-- **Creator Dashboard** — View balances, copy your tip link, share on Twitter, withdraw funds.
+- **Private Tipping** — Send confidential tips via Tongo. The amount and sender are hidden on-chain.
+- **Creator Dashboard** — View balances, manage private tips, copy your tip link, share on Twitter, withdraw funds.
 - **Embeddable Widget** — Add a floating "Tip me" button to any website with one `<script>` tag.
 - **Withdraw Flow** — Transfer tokens to any external Starknet address from the dashboard.
 - **Embed Mode** — Clean iframe-friendly tip page for widget integration.
@@ -28,8 +29,9 @@ ZapTip lets anyone accept crypto tips on any website with a single line of code.
 | **Privy Integration** | Social login + server-managed Starknet wallets via `OnboardStrategy.Privy` |
 | **Wallets** | OpenZeppelin account abstraction with `wallet.ensureReady()` auto-deploy |
 | **ERC-20 Transfers** | Multi-token transfers via `wallet.transfer()` with `mainnetTokens` |
-| **Tx Builder** | Composable transaction execution for tips and withdrawals |
-| **AVNU Paymaster** | Gasless wallet deploys and withdrawals via AVNU |
+| **Tx Builder** | Composable transaction batching for tips, withdrawals, and confidential operations |
+| **AVNU Paymaster** | Gasless wallet deployment |
+| **[Tongo Confidential Transfers](https://docs.starknet.io/build/starkzap/confidential)** | Private tipping via `TongoConfidential` — fund, transfer, rollover, and ragequit |
 
 ## Tech Stack
 
@@ -40,6 +42,7 @@ ZapTip lets anyone accept crypto tips on any website with a single line of code.
 - [Starkzap SDK](https://www.starkzap.com/) — Starknet wallet management and transactions
 - [Privy](https://privy.io/) — Social authentication and wallet creation
 - [Upstash Redis](https://upstash.com/) — Persistent user-to-wallet mapping
+- [Tongo SDK](https://github.com/fatlabsxyz/tongo) — Confidential ERC-20 transfers on Starknet
 
 ## Getting Started
 
@@ -72,6 +75,7 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_STARKNET_NETWORK` | Yes | Network name (`mainnet`) |
 | `KV_REST_API_URL` | Yes | Upstash Redis REST URL |
 | `KV_REST_API_TOKEN` | Yes | Upstash Redis REST token |
+| `NEXT_PUBLIC_TONGO_CONTRACT_ADDRESS` | No | Tongo contract address (defaults to mainnet STRK) |
 | `NEXT_PUBLIC_APP_URL` | No | Override app URL (auto-detected in dev) |
 
 ### Run
@@ -88,27 +92,31 @@ Open [http://localhost:3000](http://localhost:3000).
 src/
   app/
     page.tsx              — Landing page with live demo
-    dashboard/page.tsx    — Creator dashboard (balances, tip link, withdraw)
+    dashboard/page.tsx    — Creator dashboard (balances, private tips, withdraw)
     tip/[creatorId]/      — Tip page (supports ?embed=true for iframes)
     api/
       signer-context/     — Creates/retrieves Privy Starknet wallets (Redis-backed)
       wallet/sign/        — Signing endpoint for Starkzap SDK
+      tongo-key/          — Tongo private key management per user
+      tongo-recipient/    — Creator Tongo public key lookup for private tips
   components/
     Navbar.tsx            — Shared navigation bar
-    TipWidget.tsx         — Core tipping UI (token select, amount, send)
+    TipWidget.tsx         — Core tipping UI (token select, amount, private toggle, send)
     LandingDemo.tsx       — Landing page embedded demo
   hooks/
     useStarkzap.ts        — SDK init, wallet connection, deploy, balances
     useTip.ts             — Token transfer logic for tipping
     useWithdraw.ts        — Token transfer logic for withdrawals
+    useConfidential.ts    — Tongo key management and confidential state
   lib/
     privy-server.ts       — Privy client for server-side operations
     redis.ts              — Upstash Redis client for wallet persistence
+    tongo.ts              — Tongo contract address config
 public/
   widget.js               — Embeddable script (floating button + iframe)
 ```
 
-**Flow:** Privy handles social login and creates a server-managed Starknet wallet. The wallet mapping is persisted in Upstash Redis so it survives cold starts and redeploys. The Starkzap SDK onboards the wallet using the OpenZeppelin account preset. Users fund their wallet, deploy it, then send ERC-20 transfers to creator addresses.
+**Flow:** Privy handles social login and creates a server-managed Starknet wallet. The wallet mapping is persisted in Upstash Redis so it survives cold starts and redeploys. The Starkzap SDK onboards the wallet using the OpenZeppelin account preset. Users fund their wallet, deploy it, then send ERC-20 transfers to creator addresses. For private tips, the tipper's STRK is deposited into the Tongo confidential contract and transferred to the creator's confidential account — the amount is hidden on-chain using zero-knowledge proofs.
 
 ## Embed Widget
 
@@ -123,7 +131,6 @@ Add this to any website to show a floating "Tip me" button:
 
 ## Future Improvements
 
-- **Tongo Confidential Transfers** — Private tipping with on-chain privacy
 - **Database Backend** — Creator profiles, tip history, analytics
 - **Vanity URLs** — Custom tip page URLs (e.g., zaptip.vercel.app/tip/@alice)
 
